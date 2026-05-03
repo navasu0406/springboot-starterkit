@@ -4,51 +4,41 @@ import com.starterkit.springboot.brs.controller.v1.request.UserSignupRequest;
 import com.starterkit.springboot.brs.dto.model.user.UserDto;
 import com.starterkit.springboot.brs.dto.response.Response;
 import com.starterkit.springboot.brs.service.UserService;
-import io.swagger.annotations.Api;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 
-/**
- * Created by Arpit Khandelwal.
- */
 @RestController
-@RequestMapping("/api/v1/user")
-@Api(value = "brs-application", description = "Operations pertaining to user management in the BRS application")
+@RequestMapping("/api/v1/users")
+@RequiredArgsConstructor
+@Slf4j
 public class UserController {
-    @Autowired
-    private UserService userService;
 
-    /**
-     * Handles the incoming POST API "/v1/user/signup"
-     *
-     * @param userSignupRequest
-     * @return
-     */
+    private final UserService userService;
+
     @PostMapping("/signup")
-    public Response signup(@RequestBody @Valid UserSignupRequest userSignupRequest) {
-        return Response.ok().setPayload(registerUser(userSignupRequest, false));
+    public ResponseEntity<Response> signup(@Valid @RequestBody UserSignupRequest request) {
+
+        log.info("Signup request received for email: {}", request.getEmail());
+
+        UserDto userDto = mapToDto(request);
+
+        UserDto createdUser = userService.signup(userDto);
+
+        return ResponseEntity
+                .ok(Response.ok().setPayload(createdUser));
     }
 
-    /**
-     * Register a new user in the database
-     *
-     * @param userSignupRequest
-     * @return
-     */
-    private UserDto registerUser(UserSignupRequest userSignupRequest, boolean isAdmin) {
-        UserDto userDto = new UserDto()
-                .setEmail(userSignupRequest.getEmail())
-                .setPassword(userSignupRequest.getPassword())
-                .setFirstName(userSignupRequest.getFirstName())
-                .setLastName(userSignupRequest.getLastName())
-                .setMobileNumber(userSignupRequest.getMobileNumber())
-                .setAdmin(isAdmin);
-
-        return userService.signup(userDto);
+    private UserDto mapToDto(UserSignupRequest request) {
+        return new UserDto()
+                .setEmail(request.getEmail())
+                .setPassword(request.getPassword())
+                .setFirstName(request.getFirstName())
+                .setLastName(request.getLastName())
+                .setMobileNumber(request.getMobileNumber())
+                .setAdmin(false);
     }
 }
